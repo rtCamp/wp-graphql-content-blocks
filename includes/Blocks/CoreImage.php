@@ -55,7 +55,7 @@ class CoreImage extends Block {
 					$this->type_name
 				),
 				'resolve'     => static function ( $block ) {
-					$attrs = $block['attrs'];
+					$attrs = $block->parsedAttributes ?? [];
 					$id    = $attrs['id'] ?? null;
 					if ( $id ) {
 						$media_details = wp_get_attachment_metadata( $id );

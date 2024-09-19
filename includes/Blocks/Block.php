@@ -108,6 +108,7 @@ class Block {
 				'fields'      => $block_attribute_fields,
 			]
 		);
+
 		register_graphql_field(
 			$this->type_name,
 			'attributes',
@@ -215,14 +216,15 @@ class Block {
 					$attribute_name,
 					$prefix
 				),
-				'resolve'     => function ( $block ) use ( $attribute_name, $attribute_config ) {
+				'resolve' => function ( $block ) use ( $attribute_name, $attribute_config ) {
 					$config = [
 						$attribute_name => $attribute_config,
 					];
-					$result = $this->resolve_block_attributes_recursive( $block['attrs'], wp_unslash( render_block( $block ) ), $config );
+					$result = $this->resolve_block_attributes_recursive( $block->parsedAttributes, $block->renderedHtml, $config );
 
+					// Normalize the value.
 					return $result[ $attribute_name ];
-				},
+				}
 			];
 		}//end foreach
 
@@ -323,7 +325,9 @@ class Block {
 	}
 
 	/**
-	 * Register the Type for the block. This happens after all other object types are already registered.
+	 * Register the Type for the block.
+	 *
+	 * This happens after all other object types are already registered.
 	 */
 	private function register_type(): void {
 		register_graphql_object_type(
@@ -336,9 +340,6 @@ class Block {
 					'name' => [
 						'type'        => 'String',
 						'description' => __( 'The name of the block', 'wp-graphql-content-blocks' ),
-						'resolve'     => static function ( $block ) {
-							return isset( $block['blockName'] ) ? (string) $block['blockName'] : null;
-						},
 					],
 				],
 			]

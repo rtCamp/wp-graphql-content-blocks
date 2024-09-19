@@ -100,7 +100,7 @@ final class ContentBlocksResolverTest extends PluginTestCase {
 
 		// There should return only the non-empty blocks
 		$this->assertEquals( 3, count( $actual ) );
-		$this->assertEquals( 'core/columns', $actual[0]['blockName'] );
+		$this->assertEquals( 'core/columns', $actual[0]->name );
 	}
 
 	public function test_resolve_content_blocks_filters_empty_blocks() {
@@ -108,32 +108,33 @@ final class ContentBlocksResolverTest extends PluginTestCase {
 		$actual     = $this->instance->resolve_content_blocks( $post_model, [ 'flat' => true ] );
 		// There should return only the non-empty blocks
 		$this->assertEquals( 6, count( $actual ) );
-		$this->assertEquals( 'core/columns', $actual[0]['blockName'] );
+		$this->assertEquals( 'core/columns', $actual[0]->name );
 	}
 
 	public function test_resolve_content_blocks_resolves_classic_blocks() {
 		$post_model = new Post( get_post( $this->post_id ) );
 		$actual     = $this->instance->resolve_content_blocks( $post_model, [ 'flat' => true ] );
 
-		$this->assertEquals( 'core/freeform', $actual[5]['blockName'] );
+		$this->assertEquals( 'core/freeform', $actual[5]->name );
 	}
 
 	public function test_resolve_content_blocks_filters_blocks_not_from_allow_list() {
 		$post_model         = new Post( get_post( $this->post_id ) );
 		$allowed            = [ 'core/column', 'core/paragraph' ];
-		$parsed_blocks      = $this->instance->resolve_content_blocks( $post_model, [ 'flat' => true ], $allowed );
+		
+		$actual      = $this->instance->resolve_content_blocks( $post_model, [ 'flat' => true ], $allowed );
 		$actual_block_names = array_values(
 			array_unique(
 				array_map(
-					static function ( $parsed_block ) {
-						return $parsed_block['blockName'];
+					static function ( $block ) {
+						return $block->name;
 					},
-					$parsed_blocks,
+					$actual,
 				)
 			)
 		);
 		// There should return only blocks from the allow list
-		$this->assertEquals( 4, count( $parsed_blocks ) );
+		$this->assertEquals( 4, count( $actual ) );
 		$this->assertEquals( $allowed, $actual_block_names );
 	}
 }

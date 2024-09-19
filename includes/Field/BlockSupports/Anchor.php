@@ -27,10 +27,11 @@ class Anchor {
 						'type'        => 'string',
 						'description' => __( 'The anchor field for the block.', 'wp-graphql-content-blocks' ),
 						'resolve'     => static function ( $block ) {
-							$rendered_block = wp_unslash( render_block( $block ) );
+							$rendered_block = wp_unslash( $block->renderedHtml );
 							if ( empty( $rendered_block ) ) {
 								return null;
 							}
+
 							return DOMHelpers::parse_first_node_attribute( $rendered_block, 'id' );
 						},
 					],

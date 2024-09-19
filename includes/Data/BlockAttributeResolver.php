@@ -7,6 +7,7 @@
 
 namespace WPGraphQL\ContentBlocks\Data;
 
+use WPGraphQL\ContentBlocks\Model\Block;
 use WPGraphQL\ContentBlocks\Utilities\DOMHelpers;
 
 /**
@@ -18,37 +19,52 @@ final class BlockAttributeResolver {
 	 *
 	 * @internal This method should only be used internally. There are no guarantees for backwards compatibility.
 	 *
-	 * @param array<string,mixed> $attribute The configuration for the specific attribute.
-	 * @param string              $html The block rendered html.
-	 * @param mixed               $attribute_value The value from the parsed block attributes.
+	 * @param string                               $attribute   The attribute key.
+	 * @param \WPGraphQL\ContentBlocks\Model\Block $block The block model.
+	 * @param array<string,mixed>                  $extra_attributes The extra attributes for the block. Used because Blocks\Block injects extra attributes.
 	 *
 	 * @return mixed
 	 */
-	public static function resolve_block_attribute( $attribute, string $html, $attribute_value ) {
+	public static function resolve_block_attribute( string $attribute, Block $block, array $extra_attributes = [] ) {
 		$value = null;
+
+		$wp_block         = $block->wpBlock;
+		$attribute_config = array_merge(
+			$wp_block->block_type->attributes[ $attribute ] ?? [],
+			$extra_attributes[ $attribute ] ?? []
+		);
+
+		$html            = $block->renderedHtml;
+
+		error_log( 'innerHtml: ' . $wp_block->inner_html );
+		error_log( 'renderedHtml: ' . $html );
+		$attribute_value = $block->parsedAttributes[ $attribute ] ?? null;
 
 		if ( isset( $attribute['source'] ) ) {
 			switch ( $attribute['source'] ) {
+				case 'raw':
+					$value = $wp_block->inner_html;
+					break;
 				case 'attribute':
-					$value = self::parse_attribute_source( $html, $attribute );
+					$value = self::parse_attribute_source( $wp_block->inner_html, $attribute_config );
 					break;
 				case 'html':
 				case 'rich-text':
 					// If there is no selector, we are dealing with single source.
 					if ( ! isset( $attribute['selector'] ) ) {
-						$value = self::parse_single_source( $html, $attribute['source'] );
+						$value = self::parse_single_source( $wp_block->inner_html, $attribute_config['source'] );
 						break;
 					}
-					$value = self::parse_html_source( $html, $attribute );
+					$value = self::parse_html_source( $wp_block->inner_html, $attribute_config );
 					break;
 				case 'text':
-					$value = self::parse_text_source( $html, $attribute );
+					$value = self::parse_text_source( $wp_block->inner_html, $attribute_config );
 					break;
 				case 'query':
-					$value = self::parse_query_source( $html, $attribute, $attribute_value );
+					$value = self::parse_query_source( $wp_block->inner_html, $attribute_config, $attribute_value );
 					break;
 				case 'meta':
-					$value = self::parse_meta_source( $attribute );
+					$value = self::parse_meta_source( $attribute_config );
 					break;
 			}
 
@@ -93,6 +109,16 @@ final class BlockAttributeResolver {
 
 		return null;
 	}
+
+	/**
+	 * Parses the block content of a rich-text source block type.
+	 *
+	 * @param string              $html The html value.
+	 * @param array<string,mixed> $config The value configuration.
+	 */
+	private static function parse_rich_text_source( string $html, array $config ): ?string {
+		if 
+
 
 	/**
 	 * Parses the block content of an HTML source block type.

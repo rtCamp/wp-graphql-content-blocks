@@ -15,6 +15,19 @@ use WPGraphQL\Model\Model;
 
 /**
  * Class - Block
+ *
+ * @property ?string $clientId
+ * @property ?string $parentClientId
+ * @property ?string $name
+ * @property ?string $blockEditorCategoryName
+ * @property bool    $isDynamic
+ * @property ?int    $apiVersion
+ * @property ?string[] $cssClassNames
+ * @property ?string $renderedHtml
+ * @property self[]  $innerBlocks
+ * @property array<string,mixed> $parsedAttributes
+ * @property ?string $type
+ * @property \WP_Block $wpBlock
  */
 class Block extends Model {
 	/**
@@ -87,13 +100,15 @@ class Block extends Model {
 
 					return $models_to_return;
 				},
-				'attributes'              => fn (): array => $this->resolve_attributes(),
 				'parsedAttributes'        => fn (): array => $this->data->attributes,
 				'type'                    => function (): ?string {
 					$block_name = $this->name ?? null;
 
 					return isset( $block_name ) ? WPGraphQLHelpers::format_type_name( $block_name ) : null;
 				},
+				'wpBlock' => function (): ?\WP_Block {
+					return $this->data;
+				}
 			];
 		}
 	}

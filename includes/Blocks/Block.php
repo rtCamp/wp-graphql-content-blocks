@@ -87,6 +87,17 @@ class Block {
 			$this->additional_block_attributes ?? [],
 		);
 
+		error_log( '===BLOCK ' . $this->type_name . ' : ' );
+		$to_log = [];
+		foreach ( $block_attributes as $key => $value ) {
+			if ( ! isset( $value['source'] ) ) {
+				$to_log[ $key ] = 'no source';
+				continue;
+			}
+			$to_log[ $key ] = $value['source'];
+		}
+		error_log( print_r( $to_log, true ) );
+
 		$block_attribute_fields = $this->get_block_attribute_fields( $block_attributes, $this->type_name . 'Attributes' );
 
 		// Bail early if no attributes are defined.
@@ -216,15 +227,15 @@ class Block {
 					$attribute_name,
 					$prefix
 				),
-				'resolve' => function ( $block ) use ( $attribute_name, $attribute_config ) {
+				'resolve'     => function ( $block ) use ( $attribute_name, $attribute_config ) {
 					$config = [
 						$attribute_name => $attribute_config,
 					];
-					$result = $this->resolve_block_attributes_recursive( $block->parsedAttributes, $block->renderedHtml, $config );
+					$result = $this->resolve_block_attributes_recursive( $block, $config );
 
 					// Normalize the value.
 					return $result[ $attribute_name ];
-				}
+				},
 			];
 		}//end foreach
 
@@ -367,20 +378,22 @@ class Block {
 	/**
 	 * Resolved the value of the block attributes based on the specified config
 	 *
-	 * @param array<string,mixed> $attribute_values The block current attributes value.
-	 * @param string              $html The block rendered html.
-	 * @param array<string,mixed> $attribute_configs The block current attribute configuration, keyed to the attribute name.
+	 * @param \WPGraphQL\ContentBlocks\Model\Block $block The block model instance.
+	 * @param array<string,mixed>                  $attribute_configs The block current attribute configuration, keyed to the attribute name.
 	 */
-	private function resolve_block_attributes_recursive( $attribute_values, string $html, array $attribute_configs ): array {
+	private function resolve_block_attributes_recursive( $block, array $attribute_configs ): array {
 		$result = [];
 
-		// Clean up the html.
-		$html = trim( $html );
+		error_log( '===RESOLVE BLOCK ATTRIBUTES RECURSIVE ' . $this->type_name . ' : ' );
 
 		foreach ( $attribute_configs as $key => $config ) {
-			$attribute_value = $attribute_values[ $key ] ?? null;
+			$attribute_value = $block->parsedAttributes[ $key ] ?? null;
 
-			$result[ $key ] = BlockAttributeResolver::resolve_block_attribute( $config, $html, $attribute_value );
+			if ( ! isset ($config['source'] ) ) {
+				error_log( 'no source for ' . $key . ' defaulting to ' . $attribute_value );
+			}
+
+			$result[ $key ] = BlockAttributeResolver::resolve_block_attribute( $key, $block, $config );
 		}
 
 		return $result;

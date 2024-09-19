@@ -19,11 +19,10 @@ final class DOMHelpers {
 	 * @param string $html The HTML string to parse.
 	 * @param string $selector The selector to use.
 	 * @param string $attribute The attribute to extract.
-	 * @param mixed  $default_value The default value to return if the selector is not found.
 	 *
 	 * @return ?string extracted attribute
 	 */
-	public static function parse_attribute( string $html, string $selector, string $attribute, $default_value = null ): ?string {
+	public static function parse_attribute( string $html, string $selector, string $attribute ): ?string {
 		// Bail early if there's no html to parse.
 		if ( empty( trim( $html ) ) ) {
 			return null;
@@ -47,7 +46,7 @@ final class DOMHelpers {
 			}
 		}
 
-		return $default_value;
+		return null;
 	}
 
 	/**
@@ -213,7 +212,7 @@ final class DOMHelpers {
 	public static function parseAttribute( $html, $selector, $attribute, $default_value = null ): ?string {
 		_deprecated_function( __METHOD__, '@todo', self::class . '::parse_attribute' );
 
-		return self::parse_attribute( $html, $selector, $attribute, $default_value );
+		return self::parse_attribute( $html, $selector, $attribute ) ?: $default_value;
 	}
 
 	/**

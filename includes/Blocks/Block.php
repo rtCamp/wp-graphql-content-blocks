@@ -8,6 +8,7 @@
 namespace WPGraphQL\ContentBlocks\Blocks;
 
 use WPGraphQL\ContentBlocks\Data\BlockAttributeResolver;
+use \WPGraphQL\ContentBlocks\Model\Block as BlockModel;
 use WPGraphQL\ContentBlocks\Registry\Registry;
 use WPGraphQL\ContentBlocks\Type\Scalar\Scalar;
 use WPGraphQL\ContentBlocks\Utilities\WPGraphQLHelpers;
@@ -108,6 +109,7 @@ class Block {
 				'fields'      => $block_attribute_fields,
 			]
 		);
+
 		register_graphql_field(
 			$this->type_name,
 			'attributes',
@@ -219,8 +221,9 @@ class Block {
 					$config = [
 						$attribute_name => $attribute_config,
 					];
-					$result = $this->resolve_block_attributes_recursive( $block['attrs'], wp_unslash( render_block( $block ) ), $config );
+					$result = $this->resolve_block_attributes_recursive( $block, $config );
 
+					// Normalize the value.
 					return $result[ $attribute_name ];
 				},
 			];
@@ -325,7 +328,9 @@ class Block {
 	}
 
 	/**
-	 * Register the Type for the block. This happens after all other object types are already registered.
+	 * Register the Type for the block.
+	 *
+	 * This happens after all other object types are already registered.
 	 */
 	private function register_type(): void {
 		register_graphql_object_type(
@@ -338,9 +343,6 @@ class Block {
 					'name' => [
 						'type'        => 'String',
 						'description' => __( 'The name of the block', 'wp-graphql-content-blocks' ),
-						'resolve'     => static function ( $block ) {
-							return isset( $block['blockName'] ) ? (string) $block['blockName'] : null;
-						},
 					],
 				],
 			]
@@ -368,18 +370,17 @@ class Block {
 	/**
 	 * Resolved the value of the block attributes based on the specified config
 	 *
-	 * @param array<string,mixed> $attribute_values The block current attributes value.
-	 * @param string              $html The block rendered html.
-	 * @param array<string,mixed> $attribute_configs The block current attribute configuration, keyed to the attribute name.
+	 * @param \WPGraphQL\ContentBlocks\Model\Block $block The block model instance.
+	 * @param array<string,mixed>                  $attribute_configs The block current attribute configuration, keyed to the attribute name.
 	 */
-	private function resolve_block_attributes_recursive( $attribute_values, string $html, array $attribute_configs ): array {
+	private function resolve_block_attributes_recursive( BlockModel $block, array $attribute_configs ): array {
 		$result = [];
 
 		// Clean up the html.
-		$html = trim( $html );
+		$html = isset( $block->renderedHtml ) ? trim( $block->renderedHtml ) : '';
 
 		foreach ( $attribute_configs as $key => $config ) {
-			$attribute_value = $attribute_values[ $key ] ?? null;
+			$attribute_value = $block->parsedAttributes[ $key ] ?? null;
 
 			$result[ $key ] = BlockAttributeResolver::resolve_block_attribute( $config, $html, $attribute_value );
 		}

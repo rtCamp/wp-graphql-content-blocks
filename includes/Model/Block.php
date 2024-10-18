@@ -56,6 +56,7 @@ class Block extends Model {
 		if ( ! $this->data->block_type ) {
 			graphql_debug(
 				sprintf(
+					// translators: %s is the block name.
 					__( 'Block type not found for block: %s', 'wp-graphql-content-blocks' ),
 					$this->data->name ?: 'Unknown'
 				),
@@ -154,14 +155,6 @@ class Block extends Model {
 	protected function resolve_attribute( string $attribute_name ) {
 		$attribute_config = $this->data->block_type->attributes[ $attribute_name ] ?? [];
 
-		return BlockAttributeResolver::resolve_block_attribute( $attribute_config, $this->get_rendered_block(), $this->data->attributes[ $attribute_name ] );
-
-		$allowed_types = [ 'array', 'object', 'string', 'number', 'integer', 'boolean', 'null' ];
-		// If attribute type is set and valid, sanitize value.
-		if ( isset( $attribute['type'] ) && in_array( $attribute_config['type'], $allowed_types, true ) && rest_validate_value_from_schema( $result, $attribute_config ) ) {
-			$result = rest_sanitize_value_from_schema( $result, $attribute_config );
-		}
-
-		return $result;
+		return BlockAttributeResolver::resolve_block_attribute( $attribute_config, $this->get_rendered_block() ?? '', $this->data->attributes[ $attribute_name ] );
 	}
 }

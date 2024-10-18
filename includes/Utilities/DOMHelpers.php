@@ -37,7 +37,7 @@ final class DOMHelpers {
 			$selector = '*';
 		}
 
-		$nodes         = $doc->find( $selector );
+		$nodes = $doc->find( $selector );
 
 		foreach ( $nodes as $node ) {
 			if ( $node->hasAttribute( $attribute ) ) {

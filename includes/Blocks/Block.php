@@ -8,7 +8,7 @@
 namespace WPGraphQL\ContentBlocks\Blocks;
 
 use WPGraphQL\ContentBlocks\Data\BlockAttributeResolver;
-use \WPGraphQL\ContentBlocks\Model\Block as BlockModel;
+use WPGraphQL\ContentBlocks\Model\Block as BlockModel;
 use WPGraphQL\ContentBlocks\Registry\Registry;
 use WPGraphQL\ContentBlocks\Type\Scalar\Scalar;
 use WPGraphQL\ContentBlocks\Utilities\WPGraphQLHelpers;

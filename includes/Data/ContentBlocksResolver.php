@@ -7,6 +7,7 @@
 
 namespace WPGraphQL\ContentBlocks\Data;
 
+use WPGraphQL\ContentBlocks\Model\Block;
 use WPGraphQL\Model\Post;
 
 /**
@@ -20,7 +21,7 @@ final class ContentBlocksResolver {
 	 * @param array<string,mixed>          $args GraphQL query args to pass to the connection resolver.
 	 * @param string[]                     $allowed_block_names The list of allowed block names to filter.
 	 *
-	 * @return array<string,mixed> The resolved parsed blocks.
+	 * @return \WPGraphQL\ContentBlocks\Model\Block[]
 	 */
 	public static function resolve_content_blocks( $node, $args, $allowed_block_names = [] ): array {
 		/**
@@ -39,7 +40,6 @@ final class ContentBlocksResolver {
 
 		$content = null;
 		if ( $node instanceof Post ) {
-
 			// @todo: this is restricted intentionally.
 			// $content = $node->contentRaw;
 
@@ -88,7 +88,13 @@ final class ContentBlocksResolver {
 		 */
 		$parsed_blocks = apply_filters( 'wpgraphql_content_blocks_resolve_blocks', $parsed_blocks, $node, $args, $allowed_block_names );
 
-		return is_array( $parsed_blocks ) ? $parsed_blocks : [];
+		// Map the blocks to the Block model
+		return is_array( $parsed_blocks ) ? array_map(
+			static function ( $parsed_block ) {
+				return new Block( new \WP_Block( $parsed_block ) );
+			},
+			$parsed_blocks
+		) : [];
 	}
 
 	/**

@@ -103,7 +103,7 @@ final class ContentBlocksResolverTest extends PluginTestCase {
 
 		// There should return only the non-empty blocks
 		$this->assertEquals( 3, count( $actual ) );
-		$this->assertEquals( 'core/columns', $actual[0]['blockName'] );
+		$this->assertEquals( 'core/columns', $actual[0]->name );
 	}
 
 	public function test_resolve_content_blocks_filters_empty_blocks() {
@@ -111,32 +111,32 @@ final class ContentBlocksResolverTest extends PluginTestCase {
 		$actual     = $this->instance->resolve_content_blocks( $post_model, [ 'flat' => true ] );
 		// There should return only the non-empty blocks
 		$this->assertEquals( 6, count( $actual ) );
-		$this->assertEquals( 'core/columns', $actual[0]['blockName'] );
+		$this->assertEquals( 'core/columns', $actual[0]->name );
 	}
 
 	public function test_resolve_content_blocks_resolves_classic_blocks() {
 		$post_model = new Post( get_post( $this->post_id ) );
 		$actual     = $this->instance->resolve_content_blocks( $post_model, [ 'flat' => true ] );
 
-		$this->assertEquals( 'core/freeform', $actual[5]['blockName'] );
+		$this->assertEquals( 'core/freeform', $actual[5]->name );
 	}
 
 	public function test_resolve_content_blocks_filters_blocks_not_from_allow_list() {
 		$post_model         = new Post( get_post( $this->post_id ) );
 		$allowed            = [ 'core/column', 'core/paragraph' ];
-		$parsed_blocks      = $this->instance->resolve_content_blocks( $post_model, [ 'flat' => true ], $allowed );
+		$actual      = $this->instance->resolve_content_blocks( $post_model, [ 'flat' => true ], $allowed );
 		$actual_block_names = array_values(
 			array_unique(
 				array_map(
-					static function ( $parsed_block ) {
-						return $parsed_block['blockName'];
+					static function ( $block ) {
+						return $block->name;
 					},
-					$parsed_blocks,
+					$actual,
 				)
 			)
 		);
 		// There should return only blocks from the allow list
-		$this->assertEquals( 4, count( $parsed_blocks ) );
+		$this->assertEquals( 4, count( $actual ) );
 		$this->assertEquals( $allowed, $actual_block_names );
 	}
 
@@ -205,7 +205,7 @@ final class ContentBlocksResolverTest extends PluginTestCase {
 
 		// The block should be resolved from the post node.
 		$this->assertCount( 1, $resolved_blocks );
-		$this->assertEquals( 'core/test-filter', $resolved_blocks[0]['blockName'] );
+		$this->assertEquals( 'core/test-filter', $resolved_blocks[0]->name );
 
 		// Cleanup.
 		remove_all_filters( 'wpgraphql_content_blocks_resolve_blocks' );
@@ -254,27 +254,27 @@ final class ContentBlocksResolverTest extends PluginTestCase {
 		$resolved_blocks = $this->instance->resolve_content_blocks( $post, [ 'flat' => false ] );
 
 		$this->assertCount( 1, $resolved_blocks, 'There should be only one top-level block (columns).' );
-		$this->assertEquals( 'core/columns', $resolved_blocks[0]['blockName'] );
-		$this->assertNotEmpty( $resolved_blocks[0]['clientId'], 'The clientId should be set.' );
-		$this->assertArrayNotHasKey( 'parentClientId', $resolved_blocks[0], 'The parentClientId should be empty.' );
+		$this->assertEquals( 'core/columns', $resolved_blocks[0]->name, 'The top-level block should be columns.' );
+		$this->assertNotEmpty( $resolved_blocks[0]->clientId, 'The clientId should be set.' );
+		$this->assertEmpty( $resolved_blocks[0]->parentClientId, 'The parentClientId should be empty.' );
 
-		$this->assertCount( 2, $resolved_blocks[0]['innerBlocks'], 'There should be two inner blocks (columns).' );
+		$this->assertCount( 2, $resolved_blocks[0]->innerBlocks, 'There should be two inner blocks (columns).' );
 
 		// Check the inner blocks.
-		$expected_parent_client_id = $resolved_blocks[0]['clientId'];
+		$expected_parent_client_id = $resolved_blocks[0]->clientId;
 
-		foreach ( $resolved_blocks[0]['innerBlocks'] as $inner_block ) {
-			$this->assertEquals( 'core/column', $inner_block['blockName'] );
-			$this->assertCount( 2, $inner_block['innerBlocks'], 'There should be two inner blocks (column).' );
-			$this->assertNotEmpty( $inner_block['clientId'], 'The clientId should be set.' );
-			$this->assertArrayNotHasKey( 'parentClientId', $resolved_blocks[0], 'The parentClientId should only be set when flattening.' ); // @todo This is incorrect, the parentClientId should be set for nested blocks.
+		foreach ( $resolved_blocks[0]->innerBlocks as $inner_block ) {
+			$this->assertEquals( 'core/column', $inner_block->name, 'The inner block should be a column.' );
+			$this->assertCount( 2, $inner_block->innerBlocks, 'There should be two inner blocks (column).' );
+			$this->assertNotEmpty( $inner_block->clientId, 'The clientId should be set.' );
+			$this->assertEmpty( $resolved_blocks[0]->parentClientId, 'The parentClientId should only be set when flattening.' ); // @todo This is incorrect, the parentClientId should be set for nested blocks.
 
 			// Check the inner inner blocks.
-			$expected_parent_client_id = $inner_block['clientId'];
+			$expected_parent_client_id = $inner_block->clientId;
 
-			foreach ( $inner_block['innerBlocks'] as $inner_inner_block ) {
-				$this->assertNotEmpty( $inner_inner_block['clientId'], 'The clientId should be set.' );
-				$this->assertArrayNotHasKey( 'parentClientId', $resolved_blocks[0], 'The parentClientId should only be set when flattening.' ); // @todo This is incorrect, the parentClientId should be set for nested blocks.
+			foreach ( $inner_block->innerBlocks as $inner_inner_block ) {
+				$this->assertNotEmpty( $inner_inner_block->clientId, 'The clientId should be set.' );
+				$this->assertEmpty( $resolved_blocks[0]->parentClientId, 'The parentClientId should only be set when flattening.' ); // @todo This is incorrect, the parentClientId should be set for nested blocks.
 			}
 		}
 
@@ -287,40 +287,40 @@ final class ContentBlocksResolverTest extends PluginTestCase {
 		$this->assertCount( 7, $resolved_blocks, 'There should be five blocks when flattened.' );
 
 		// Check the top-level block (columns).
-		$this->assertNotEmpty( $resolved_blocks[0]['clientId'], 'The clientId should be set.' );
-		$this->assertEqualBlocks( $expected_blocks[0], $resolved_blocks[0], 'The top-level block should match.' );
+		$this->assertNotEmpty( $resolved_blocks[0]->clientId, 'The clientId should be set.' );
+		$this->assertEqualBlockAttributes( $expected_blocks[0]->wpBlock->attributes, $resolved_blocks[0]->wpBlock->attributes, 'The top-level block should match.' );
 
 		// Check first inner block (column).
-		$expected_parent_client_id = $resolved_blocks[0]['clientId'];
-		$this->assertNotEmpty( $resolved_blocks[1]['clientId'], 'The clientId should be set.' );
-		$this->assertEquals( $expected_parent_client_id, $resolved_blocks[1]['parentClientId'], 'The parentClientId should match.' );
-		$this->assertEqualBlocks( $expected_blocks[0]['innerBlocks'][0], $resolved_blocks[1], 'The first inner block should match.' );
+		$expected_parent_client_id = $resolved_blocks[0]->clientId;
+		$this->assertNotEmpty( $resolved_blocks[1]->clientId, 'The clientId should be set.' );
+		$this->assertEquals( $expected_parent_client_id, $resolved_blocks[1]->parentClientId, 'The parentClientId should match.' );
+		$this->assertEqualBlockAttributes( $expected_blocks[0]->innerBlocks[0]->wpBlock->attributes, $resolved_blocks[1]->wpBlock->attributes, 'The first inner block should match.' );
 
 		// Check first inner block children.
-		$expected_parent_client_id = $resolved_blocks[1]['clientId'];
-		$this->assertNotEmpty( $resolved_blocks[2]['clientId'], 'The clientId should be set.' );
-		$this->assertEquals( $expected_parent_client_id, $resolved_blocks[2]['parentClientId'], 'The parentClientId should match.' );
-		$this->assertEqualBlocks( $expected_blocks[0]['innerBlocks'][0]['innerBlocks'][0], $resolved_blocks[2], 'The first inner inner block should match.' );
+		$expected_parent_client_id = $resolved_blocks[1]->clientId;
+		$this->assertNotEmpty( $resolved_blocks[2]->clientId, 'The clientId should be set.' );
+		$this->assertEquals( $expected_parent_client_id, $resolved_blocks[2]->parentClientId, 'The parentClientId should match.' );
+		$this->assertEqualBlockAttributes( $expected_blocks[0]->innerBlocks[0]->innerBlocks[0]->wpBlock->attributes, $resolved_blocks[2]->wpBlock->attributes, 'The first inner inner block should match.' );
 
-		$this->assertNotEmpty( $resolved_blocks[3]['clientId'], 'The clientId should be set.' );
-		$this->assertEquals( $expected_parent_client_id, $resolved_blocks[3]['parentClientId'], 'The parentClientId should match.' );
-		$this->assertEqualBlocks( $expected_blocks[0]['innerBlocks'][0]['innerBlocks'][1], $resolved_blocks[3], 'The second inner inner block should match.' );
+		$this->assertNotEmpty( $resolved_blocks[3]->clientId, 'The clientId should be set.' );
+		$this->assertEquals( $expected_parent_client_id, $resolved_blocks[3]->parentClientId, 'The parentClientId should match.' );
+		$this->assertEqualBlockAttributes( $expected_blocks[0]->innerBlocks[0]->innerBlocks[1]->wpBlock->attributes, $resolved_blocks[3]->wpBlock->attributes, 'The second inner inner block should match.' );
 
 		// Check second inner block (column).
-		$expected_parent_client_id = $resolved_blocks[0]['clientId'];
-		$this->assertNotEmpty( $resolved_blocks[4]['clientId'], 'The clientId should be set.' );
-		$this->assertEquals( $expected_parent_client_id, $resolved_blocks[4]['parentClientId'], 'The parentClientId should match.' );
-		$this->assertEqualBlocks( $expected_blocks[0]['innerBlocks'][1], $resolved_blocks[4], 'The first inner block should match.' );
+		$expected_parent_client_id = $resolved_blocks[0]->clientId;
+		$this->assertNotEmpty( $resolved_blocks[4]->clientId, 'The clientId should be set.' );
+		$this->assertEquals( $expected_parent_client_id, $resolved_blocks[4]->parentClientId, 'The parentClientId should match.' );
+		$this->assertEqualBlockAttributes( $expected_blocks[0]->innerBlocks[1]->wpBlock->attributes, $resolved_blocks[4]->wpBlock->attributes, 'The first inner block should match.' );
 
 		// Check second inner block children.
-		$expected_parent_client_id = $resolved_blocks[4]['clientId'];
-		$this->assertNotEmpty( $resolved_blocks[5]['clientId'], 'The clientId should be set.' );
-		$this->assertEquals( $expected_parent_client_id, $resolved_blocks[5]['parentClientId'], 'The parentClientId should match.' );
-		$this->assertEqualBlocks( $expected_blocks[0]['innerBlocks'][1]['innerBlocks'][0], $resolved_blocks[5], 'The first inner inner block should match.' );
+		$expected_parent_client_id = $resolved_blocks[4]->clientId;
+		$this->assertNotEmpty( $resolved_blocks[5]->clientId, 'The clientId should be set.' );
+		$this->assertEquals( $expected_parent_client_id, $resolved_blocks[5]->parentClientId, 'The parentClientId should match.' );
+		$this->assertEqualBlockAttributes( $expected_blocks[0]->innerBlocks[1]->innerBlocks[0]->wpBlock->attributes, $resolved_blocks[5]->wpBlock->attributes, 'The first inner inner block should match.' );
 
-		$this->assertNotEmpty( $resolved_blocks[6]['clientId'], 'The clientId should be set.' );
-		$this->assertEquals( $expected_parent_client_id, $resolved_blocks[6]['parentClientId'], 'The parentClientId should match.' );
-		$this->assertEqualBlocks( $expected_blocks[0]['innerBlocks'][1]['innerBlocks'][1], $resolved_blocks[6], 'The second inner inner block should match.' );
+		$this->assertNotEmpty( $resolved_blocks[6]->clientId, 'The clientId should be set.' );
+		$this->assertEquals( $expected_parent_client_id, $resolved_blocks[6]->parentClientId, 'The parentClientId should match.' );
+		$this->assertEqualBlockAttributes( $expected_blocks[0]->innerBlocks[1]->innerBlocks[1]->wpBlock->attributes, $resolved_blocks[6]->wpBlock->attributes, 'The second inner inner block should match.' );
 	}
 
 	/**
@@ -330,7 +330,7 @@ final class ContentBlocksResolverTest extends PluginTestCase {
 	 * @param array<string,mixed> $actual   The actual block.
 	 * @param string              $message  The message to display if the assertion fails.
 	 */
-	protected function assertEqualBlocks( $expected, $actual, $message = '' ) {
+	protected function assertEqualBlockAttributes( $expected, $actual, $message = '' ) {
 		// Remove clientId and parentClientId from comparison.
 		unset( $expected['clientId'] );
 		unset( $expected['parentClientId'] );

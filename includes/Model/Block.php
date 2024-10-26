@@ -9,7 +9,6 @@
 
 namespace WPGraphQL\ContentBlocks\Model;
 
-use WPGraphQL\ContentBlocks\Data\BlockAttributeResolver;
 use WPGraphQL\ContentBlocks\Utilities\WPGraphQLHelpers;
 use WPGraphQL\Model\Model;
 
@@ -51,20 +50,6 @@ class Block extends Model {
 	 */
 	public function __construct( \WP_Block $block ) {
 		$this->data = $block;
-
-		// Log a Debug message if the block type is not found.
-		if ( ! $this->data->block_type ) {
-			graphql_debug(
-				sprintf(
-					// translators: %s is the block name.
-					__( 'Block type not found for block: %s', 'wp-graphql-content-blocks' ),
-					$this->data->name ?: 'Unknown'
-				),
-				[
-					'parsed_block' => $block,
-				]
-			);
-		}
 
 		parent::__construct();
 	}
@@ -126,35 +111,5 @@ class Block extends Model {
 		}
 
 		return $this->rendered_block;
-	}
-
-	/**
-	 * Resolves the block attributes.
-	 *
-	 * @return array<string,callable(string,array<string,mixed>):mixed>
-	 */
-	protected function resolve_attributes(): array {
-		$registered_attributes = $this->data->block_type->attributes ?? [];
-
-		$resolvers = [];
-
-		foreach ( array_keys( $registered_attributes ) as $attribute_name ) {
-			$resolvers[ $attribute_name ] = fn () => $this->resolve_attribute( $attribute_name );
-		}
-
-		return $resolvers;
-	}
-
-	/**
-	 * Resolves a single block attribute.
-	 *
-	 * @param string $attribute_name The name of the attribute being resolved.
-	 *
-	 * @return mixed
-	 */
-	protected function resolve_attribute( string $attribute_name ) {
-		$attribute_config = $this->data->block_type->attributes[ $attribute_name ] ?? [];
-
-		return BlockAttributeResolver::resolve_block_attribute( $attribute_config, $this->get_rendered_block() ?? '', $this->data->attributes[ $attribute_name ] );
 	}
 }

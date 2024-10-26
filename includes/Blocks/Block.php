@@ -121,6 +121,7 @@ class Block {
 					$this->type_name
 				),
 				'resolve'     => static function ( $block ) {
+					// Use the model to resolve the block attributes.
 					return $block;
 				},
 			]
@@ -137,55 +138,41 @@ class Block {
 	 * @return mixed
 	 */
 	private function get_attribute_type( $name, $attribute, $prefix ) {
-		$type = null;
-
 		if ( isset( $attribute['type'] ) ) {
 			switch ( $attribute['type'] ) {
 				case 'rich-text':
 				case 'string':
-					$type = 'String';
-					break;
+					return 'String';
 				case 'boolean':
-					$type = 'Boolean';
-					break;
+					return 'Boolean';
 				case 'number':
-					$type = 'Float';
-					break;
+					return 'Float';
 				case 'integer':
-					$type = 'Int';
-					break;
+					return 'Int';
 				case 'array':
 					if ( isset( $attribute['query'] ) ) {
-						$type = [ 'list_of' => $this->get_query_type( $name, $attribute['query'], $prefix ) ];
-					} elseif ( isset( $attribute['items'] ) ) {
+						return [ 'list_of' => $this->get_query_type( $name, $attribute['query'], $prefix ) ];
+					}
+
+					if ( isset( $attribute['items'] ) ) {
 						$of_type = $this->get_attribute_type( $name, $attribute['items'], $prefix );
 
 						if ( null !== $of_type ) {
-							$type = [ 'list_of' => $of_type ];
-						} else {
-							$type = Scalar::get_block_attributes_array_type_name();
+							return [ 'list_of' => $of_type ];
 						}
-					} else {
-						$type = Scalar::get_block_attributes_array_type_name();
+
+						return Scalar::get_block_attributes_array_type_name();
 					}
-					break;
+
+					return Scalar::get_block_attributes_array_type_name();
 				case 'object':
-					$type = Scalar::get_block_attributes_object_type_name();
-					break;
+					return Scalar::get_block_attributes_object_type_name();
 			}
 		} elseif ( isset( $attribute['source'] ) ) {
-			$type = 'String';
+			return 'String';
 		}
 
-		if ( null !== $type ) {
-			$default_value = $attribute['default'] ?? null;
-
-			if ( isset( $default_value ) ) {
-				$type = [ 'non_null' => $type ];
-			}
-		}
-
-		return $type;
+		return null;
 	}
 
 	/**
@@ -221,6 +208,7 @@ class Block {
 					$config = [
 						$attribute_name => $attribute_config,
 					];
+
 					$result = $this->resolve_block_attributes_recursive( $block, $config );
 
 					// Normalize the value.

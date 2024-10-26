@@ -193,7 +193,13 @@ final class ContentBlocksResolverTest extends PluginTestCase {
 		add_filter(
 			'wpgraphql_content_blocks_resolve_blocks',
 			static function ( $blocks, $node, $args, $allowed_block_names ) {
-				return [ [ 'blockName' => 'core/test-filter' ] ];
+				return [
+					[ 'blockName' => 'core/test-filter' ], // This will be filtered out.
+					[
+						'blockName' => 'core/paragraph',
+						'attrs'     => [ 'content' => 'Test content' ],
+					]
+				];
 			},
 			10,
 			4
@@ -205,7 +211,7 @@ final class ContentBlocksResolverTest extends PluginTestCase {
 
 		// The block should be resolved from the post node.
 		$this->assertCount( 1, $resolved_blocks );
-		$this->assertEquals( 'core/test-filter', $resolved_blocks[0]->name );
+		$this->assertEquals( 'core/paragraph', $resolved_blocks[0]->name );
 
 		// Cleanup.
 		remove_all_filters( 'wpgraphql_content_blocks_resolve_blocks' );

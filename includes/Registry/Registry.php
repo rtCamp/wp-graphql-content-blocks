@@ -7,8 +7,9 @@
 
 namespace WPGraphQL\ContentBlocks\Registry;
 
+use WPGraphQL\ContentBlocks\BlockSupports;
 use WPGraphQL\ContentBlocks\Blocks\Block;
-use WPGraphQL\ContentBlocks\Field\BlockSupports\Anchor;
+use WPGraphQL\ContentBlocks\Field\BlockSupports\Anchor as DeprecatedAnchorField;
 use WPGraphQL\ContentBlocks\Type\InterfaceType\EditorBlockInterface;
 use WPGraphQL\ContentBlocks\Type\InterfaceType\PostTypeBlockInterface;
 use WPGraphQL\ContentBlocks\Type\Scalar\Scalar;
@@ -179,7 +180,7 @@ final class Registry {
 
 		$block_interfaces = [];
 		// NOTE: Using add_filter here creates a performance penalty.
-		$block_interfaces = Anchor::get_block_interfaces( $block_interfaces, $block_spec );
+		$block_interfaces = DeprecatedAnchorField::get_block_interfaces( $block_interfaces, $block_spec );
 		return $block_interfaces;
 	}
 
@@ -199,8 +200,21 @@ final class Registry {
 		}
 
 		$block_interfaces = [];
+	
+		$block_support_classes = $this->get_block_supports_classes();
+
+		foreach ( $block_support_classes as $instance ) {
+			$interfaces_to_add = $instance::get_attributes_interfaces( $block_spec );
+			if ( empty( $interfaces_to_add ) ) {
+				continue;
+			}
+
+			$block_interfaces[] = array_merge( $block_interfaces, $interfaces_to_add );
+		}
+
 		// NOTE: Using add_filter here creates a performance penalty.
-		$block_interfaces = Anchor::get_block_attributes_interfaces( $block_interfaces, $block_spec );
+		$block_interfaces = DeprecatedAnchorField::get_block_attributes_interfaces( $block_interfaces, $block_spec );
+
 		return $block_interfaces;
 	}
 
@@ -312,6 +326,27 @@ final class Registry {
 	 * @return void
 	 */
 	protected function register_support_block_types() {
-		Anchor::register();
+		DeprecatedAnchorField::register();
+
+		$block_support_classes = $this->get_block_supports_classes();
+		foreach ( $block_support_classes as $block_support_class ) {
+			$block_support_class::register();
+		}
+	}
+
+	/**
+	 * Get the block supports classes, keyed by the GraphQL type name they register.
+	 *
+	 * @return class-string<\WPGraphQL\ContentBlocks\BlockSupports\AbstractBlockSupport>[]
+	 */
+	private function get_block_supports_classes(): array {
+		return [
+			BlockSupports\Align::class,
+			BlockSupports\Anchor::class,
+			BlockSupports\CustomClassName::class,
+			BlockSupports\Color::class,
+			BlockSupports\Shadow::class,
+			BlockSupports\Typography::class,
+		];
 	}
 }

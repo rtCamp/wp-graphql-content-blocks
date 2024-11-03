@@ -106,8 +106,7 @@ class Block extends Model {
 	 */
 	protected function get_rendered_block(): ?string {
 		if ( ! isset( $this->rendered_block ) ) {
-			$rendered             = $this->data->render();
-			$this->rendered_block = do_shortcode( $rendered );
+			$this->rendered_block = ! empty( $this->data->parsed_block ) ? render_block( $this->data->parsed_block ) : '';
 		}
 
 		return $this->rendered_block;

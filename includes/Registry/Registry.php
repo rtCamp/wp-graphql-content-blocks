@@ -66,9 +66,9 @@ final class Registry {
 	 * Registry init procedure.
 	 */
 	public function init(): void {
-		$this->register_interface_types();
 		$this->register_scalar_types();
 		$this->register_support_block_types();
+		$this->register_interface_types();
 		$this->register_block_types();
 	}
 
@@ -200,16 +200,17 @@ final class Registry {
 		}
 
 		$block_interfaces = [];
-	
+
 		$block_support_classes = $this->get_block_supports_classes();
 
 		foreach ( $block_support_classes as $instance ) {
 			$interfaces_to_add = $instance::get_attributes_interfaces( $block_spec );
+
 			if ( empty( $interfaces_to_add ) ) {
 				continue;
 			}
 
-			$block_interfaces[] = array_merge( $block_interfaces, $interfaces_to_add );
+			$block_interfaces = array_merge( $block_interfaces, $interfaces_to_add );
 		}
 
 		// NOTE: Using add_filter here creates a performance penalty.

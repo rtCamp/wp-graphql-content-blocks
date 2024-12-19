@@ -148,8 +148,10 @@ final class ContentBlocksResolver {
 		$block['clientId'] = uniqid();
 
 		// @todo apply more hydrations.
-
+		$block = self::populate_template_part_inner_blocks( $block );
+		$block = self::populate_post_content_inner_blocks( $block );
 		$block = self::populate_reusable_blocks( $block );
+		$block = self::populate_pattern_inner_blocks( $block );
 
 		// Prepare innerBlocks.
 		if ( ! empty( $block['innerBlocks'] ) ) {
@@ -182,6 +184,65 @@ final class ContentBlocksResolver {
 	}
 
 	/**
+	 * Populates the innerBlocks of a template part block with the blocks from the template part.
+	 *
+	 * @param array<string,mixed> $block The block to populate.
+	 *
+	 * @return array<string,mixed> The populated block.
+	 */
+	private static function populate_template_part_inner_blocks( array $block ): array {
+		// Bail if not WP 5.8 or later.
+		if ( ! function_exists( 'get_block_templates' ) ) {
+			return $block;
+		}
+
+		if ( 'core/template-part' !== $block['blockName'] || ! isset( $block['attrs']['slug'] ) ) {
+			return $block;
+		}
+
+		$matching_templates = get_block_templates( [ 'slug__in' => [ $block['attrs']['slug'] ] ], 'wp_template_part' );
+
+		$template_blocks = ! empty( $matching_templates[0]->content ) ? self::parse_blocks( $matching_templates[0]->content ) : null;
+
+		if ( empty( $template_blocks ) ) {
+			return $block;
+		}
+
+		$block['innerBlocks'] = $template_blocks;
+
+		return $block;
+	}
+
+	/**
+	 * Populates the innerBlocks of a core/post-content block with the blocks from the post content.
+	 *
+	 * @param array<string,mixed> $block The block to populate.
+	 *
+	 * @return array<string,mixed> The populated block.
+	 */
+	private static function populate_post_content_inner_blocks( array $block ): array {
+		if ( 'core/post-content' !== $block['blockName'] ) {
+			return $block;
+		}
+
+		$post = get_post();
+
+		if ( ! $post ) {
+			return $block;
+		}
+
+		$parsed_blocks = ! empty( $post->post_content ) ? self::parse_blocks( $post->post_content ) : null;
+
+		if ( empty( $parsed_blocks ) ) {
+			return $block;
+		}
+
+		$block['innerBlocks'] = $parsed_blocks;
+
+		return $block;
+	}
+
+	/**
 	 * Populates reusable blocks with the blocks from the reusable ref ID.
 	 *
 	 * @param array<string,mixed> $block The block to populate.
@@ -206,6 +267,32 @@ final class ContentBlocksResolver {
 		}
 
 		return array_merge( ...$parsed_blocks );
+	}
+
+	/**
+	 * Populates the pattern innerBlocks with the blocks from the pattern.
+	 *
+	 * @param array<string,mixed> $block The block to populate.
+	 * @return array<string,mixed> The populated block.
+	 */
+	private static function populate_pattern_inner_blocks( array $block ): array {
+		// Bail if not WP 6.6 or later.
+		if ( ! function_exists( 'resolve_pattern_blocks' ) ) {
+			return $block;
+		}
+
+		if ( 'core/pattern' !== $block['blockName'] || ! isset( $block['attrs']['slug'] ) ) {
+			return $block;
+		}
+
+		$resolved_patterns = resolve_pattern_blocks( [ $block ] );
+
+		if ( empty( $resolved_patterns ) ) {
+			return $block;
+		}
+
+		$block['innerBlocks'] = $resolved_patterns;
+		return $block;
 	}
 
 	/**

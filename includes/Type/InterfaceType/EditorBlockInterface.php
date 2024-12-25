@@ -9,7 +9,6 @@ namespace WPGraphQL\ContentBlocks\Type\InterfaceType;
 
 use WPGraphQL\ContentBlocks\Data\ContentBlocksResolver;
 use WP_Block_Type_Registry;
-use WPGraphQL\ContentBlocks\Utilities\WPGraphQLHelpers;
 
 /**
  * Class EditorBlockInterface
@@ -117,7 +116,7 @@ final class EditorBlockInterface {
 						'type'        => 'String',
 						'description' => __( 'The (GraphQL) type of the block', 'wp-graphql-content-blocks' ),
 						'resolve'     => static function ( $block ) {
-							return WPGraphQLHelpers::get_type_name_for_block( $block['blockName'] ?? null );
+							return $block->type;
 						},
 					],
 				],

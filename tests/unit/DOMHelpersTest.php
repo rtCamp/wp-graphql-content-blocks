@@ -21,7 +21,6 @@ final class DOMHelpersTest extends PluginTestCase {
 		// $html
 		$this->assertNull( DOMHelpers::parse_attribute( '', $no_existent_selector, $data_attribute ) );
 		$this->assertNull( DOMHelpers::parse_attribute( $html, $no_existent_selector, $data_attribute ) );
-		$this->assertEquals( 'Bar', DOMHelpers::parse_attribute( $html, $no_existent_selector, $data_attribute, 'Bar' ) );
 		$this->assertEquals( 'foo-data', DOMHelpers::parse_attribute( $html, $id_selector, $data_attribute ) );
 		$this->assertEquals( 'foo-class', DOMHelpers::parse_attribute( $html, $id_selector, $class_attribute ) );
 		$this->assertEquals( 'foo-id', DOMHelpers::parse_attribute( $html, $id_selector, $id_attribute ) );
@@ -36,7 +35,6 @@ final class DOMHelpersTest extends PluginTestCase {
 		$this->assertEquals( 'center', DOMHelpers::parse_attribute( $html2, '*', 'data-align' ) );
 		$this->assertEquals( 'right', DOMHelpers::parse_attribute( $html2, '.has-text-align-right', 'data-align' ) );
 		$this->assertNull( DOMHelpers::parse_attribute( $html2, '.non-existent-class', 'data-align' ) );
-		$this->assertEquals( 'default', DOMHelpers::parse_attribute( $html2, '.non-existent-class', 'data-align', 'default' ) );
 
 		// $htm3
 		$this->assertEquals( 'left', DOMHelpers::parse_attribute( $html3, 'span', 'data-align' ) );

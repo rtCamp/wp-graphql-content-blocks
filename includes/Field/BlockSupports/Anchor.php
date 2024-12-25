@@ -2,6 +2,8 @@
 /**
  * Registers the BlockSupports Anchor Field
  *
+ * @deprecated @next-version Use `BlockWithAnchorSupportAttributes` instead.
+ *
  * @package WPGraphQL\ContentBlocks\Field\BlockSupports
  */
 
@@ -21,16 +23,20 @@ class Anchor {
 		register_graphql_interface_type(
 			'BlockWithSupportsAnchor',
 			[
-				'description' => __( 'Block that supports Anchor field', 'wp-graphql-content-blocks' ),
-				'fields'      => [
+				'description'       => __( 'Block that supports Anchor field', 'wp-graphql-content-blocks' ),
+				'deprecationReason' => __( 'Use `BlockWithAnchorSupportAttributes` instead.', 'wp-graphql-content-blocks' ),
+				'fields'            => [
 					'anchor' => [
-						'type'        => 'string',
-						'description' => __( 'The anchor field for the block.', 'wp-graphql-content-blocks' ),
-						'resolve'     => static function ( $block ) {
-							$rendered_block = wp_unslash( render_block( $block ) );
+						'type'              => 'string',
+						'description'       => __( 'The anchor field for the block.', 'wp-graphql-content-blocks' ),
+						'deprecationReason' => __( 'Use `BlockWithAnchorSupportAttributes` instead.', 'wp-graphql-content-blocks' ),
+						'resolve'           => static function ( $block ) {
+							$rendered_block = wp_unslash( $block->renderedHtml );
+
 							if ( empty( $rendered_block ) ) {
 								return null;
 							}
+
 							return DOMHelpers::parse_first_node_attribute( $rendered_block, 'id' );
 						},
 					],

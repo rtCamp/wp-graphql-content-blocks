@@ -8,7 +8,6 @@
 namespace WPGraphQL\ContentBlocks\Type\InterfaceType;
 
 use WPGraphQL\ContentBlocks\Data\ContentBlocksResolver;
-use WPGraphQL\ContentBlocks\Utilities\WPGraphQLHelpers;
 
 /**
  * Class PostTypeBlockInterface
@@ -36,7 +35,7 @@ final class PostTypeBlockInterface {
 					],
 				],
 				'resolveType' => static function ( $block ) {
-					return WPGraphQLHelpers::get_type_name_for_block( $block['blockName'] ?? null );
+					return $block->type;
 				},
 			]
 		);
